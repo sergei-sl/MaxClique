@@ -25,8 +25,8 @@ size_t SimpleSolver::solve(const Graph in_graph, Graph& out_solutions)
     RunGreedyHeuristic();
     std::vector<Vertex> init;
     init.clear();
-    init.reserve(m_curr_clique.size() * 2);
-    findClique(init, m_p);
+    init.reserve(m_p.size());
+    findClique(init.data(), init.size(), buf.data(), buf.size());
     checkClique(m_curr_clique, in_graph);
     out_solutions.SetVertexSet(m_curr_clique);
     return m_curr_clique.size();
@@ -67,46 +67,7 @@ void SimpleSolver::RunGreedyHeuristic()
     }
 }
 
-void SimpleSolver::findClique(Vertices& clique, const std::vector<Vertex>& P) noexcept
-{
-    static size_t count = 0;
-    size_t g = clique.size();
-    if (g > m_curr_clique.size())
-    {
-        m_curr_clique = clique;
-    }
-    if ((g + P.size()) <= m_curr_clique.size())
-        return;
-    auto x = P.begin();
-    while (x != P.end())
-    {
-        auto loc_clique = clique;
-        loc_clique.push_back(*x);
 
-        if (0/*std::distance(x, P.end())> 15 && P.size() < m_p.size() - 15*/)//Disable Domain Filtering 
-        {
-            Vertices buf = (IntersectWithNeighbors(*x, x+1, P.end()));
-            if (buf.empty())
-                continue;
-            buf = (Lemma1(buf.begin(), buf.end(), loc_clique.size()));
-            if (buf.empty())
-                return;
-            buf = (Lemma2(buf.begin(), buf.end(), loc_clique));
-            if (buf.empty())
-                return;
-            findClique(loc_clique, buf);
-
-            count++;
-        }
-        else
-        {
-            findClique(loc_clique, IntersectWithNeighbors(*x, x+1, P.end()));
-
-            count++;
-        }
-        x++;
-    }
-}
 
 std::vector<Vertex> SimpleSolver::IntersectWithNeighbors(Vertex v, std::vector<Vertex>::const_iterator begin, std::vector<Vertex>::const_iterator end) noexcept
 {
@@ -123,43 +84,128 @@ std::vector<Vertex> SimpleSolver::IntersectWithNeighbors(Vertex v, std::vector<V
     return out_P;
 }
 
-std::vector<Vertex> SimpleSolver::Lemma1(std::vector<Vertex>::const_iterator begin, std::vector<Vertex>::const_iterator end, size_t C_s) noexcept
+
+void SimpleSolver::findClique(Vertex* const clique, size_t clique_size, Vertex* P, size_t size) noexcept
 {
-    std::vector<Vertex> out_P;
-    out_P.reserve(std::distance(begin, end));
-    for (auto i = begin; i<end; ++i)
+    static size_t count = 0;
+    if (clique_size > m_curr_clique.size())
     {
-        const auto& adjacent = m_current_graph.GetAdjacencyMatrixRow(*i);
-        size_t s = 0;
-        for (auto v = begin; v<end; ++v)
-            s += adjacent[*v];
-        if (s + C_s >= m_curr_clique.size())
+        m_curr_clique.assign(clique, clique + clique_size);
+    }
+    if ((clique_size + size) <= m_curr_clique.size())
+        return;
+    auto x = P;
+    size_t it = 0;
+    Vertex* buf = nullptr;
+    while (it < size)
+    {
+        Vertex* const loc_clique = clique;
+        loc_clique[clique_size] = *x;
+        size_t new_size = size - it - 1;
+        size_t new_clique_size = clique_size + 1;
+
+        Vertex* buf = IntersectWithNeighbors(*x, x + 1, new_size);
+        if (size - it> 15 && size < m_p.size() - 15)//Enable Domain Filtering 
         {
-            out_P.push_back(*i);
+            buf = Lemma1(*x, buf, new_size, new_clique_size);
+            if (0 == new_size)
+            {
+                if (buf)
+                    delete buf;
+                buf = nullptr;
+                x++;
+                it++;
+                continue;
+            }
+            buf = Lemma2(*x, buf, new_size, clique, new_clique_size);
+            if (0 == new_size)
+            {
+                if (buf)
+                    delete buf;
+                buf = nullptr;
+                x++;
+                it++;
+                continue;
+            }
+            findClique(loc_clique, new_clique_size, buf, new_size);
+            if (buf)
+                delete buf;
+            buf = nullptr;
+            count++;
+        }
+        else
+        {           
+            findClique(loc_clique, new_clique_size, buf, new_size);
+            if (buf)
+                delete buf;
+            buf = nullptr;
+            count++;
+        }
+        x++;
+        it++;
+    }
+}
+
+Vertex* SimpleSolver::IntersectWithNeighbors(Vertex v, Vertex* in_P, size_t& size) noexcept
+{
+    Vertex* out_P = new Vertex[size];
+    size_t loc_size = 0;
+    const auto& adjacent = m_current_graph.GetAdjacencyMatrixRow(v);
+    for (auto i = 0; i<size; ++i)
+    {
+        if (adjacent[in_P[i]])
+        {
+            out_P[loc_size] = in_P[i];
+            loc_size++;
         }
     }
+    size = loc_size;
     return out_P;
 }
 
-std::vector<Vertex> SimpleSolver::Lemma2(std::vector<Vertex>::const_iterator begin, std::vector<Vertex>::const_iterator end, Vertices& clique) noexcept
+Vertex* SimpleSolver::Lemma1(Vertex v, Vertex* in_P, size_t& size, size_t C_s) noexcept
 {
-        size_t size = std::distance(begin, end) - 1;
-        std::vector <Vertex> out_P;
-        for (auto i = begin; i<end; ++i)
+    Vertex* out_P = new Vertex[size];
+    size_t loc_size = 0;
+    for (size_t i = 0; i<size; ++i)
+    {
+        const auto& adjacent = m_current_graph.GetAdjacencyMatrixRow(in_P[i]);
+        size_t s = 0;
+        for (size_t v = 0; v<size; ++v)
+            s += adjacent[in_P[v]];
+        if (s + C_s >= m_curr_clique.size())
         {
-            auto adjacent = m_current_graph.GetAdjacencyMatrixRow(*i);
-            size_t s = 0;
-            for (auto v = begin; v<end; ++v)
-                s += adjacent[*v];
-            if (s == size)
-            {
-                clique.push_back(*i);
-            }
-            else
-            {
-                out_P.push_back(*i);
-            }
+            out_P[loc_size] = in_P[i];
+            loc_size++;
         }
-        return out_P;
+    }
+    size = loc_size;
+    delete in_P;
+    return out_P;
 }
 
+Vertex* SimpleSolver::Lemma2(Vertex v, Vertex* in_P, size_t& size, Vertex* const clique, size_t& clique_size) noexcept
+{
+    Vertex* out_P = new Vertex[size];
+    size_t loc_size = 0;
+    for (size_t i = 0; i<size; ++i)
+    {
+        auto adjacent = m_current_graph.GetAdjacencyMatrixRow(in_P[i]);
+        size_t s = 0;
+        for (size_t v = 0; v<size; ++v)
+            s += adjacent[in_P[v]];
+        if (s == size)
+        {
+            clique[clique_size] = in_P[i];
+            clique_size++;
+        }
+        else
+        {
+            out_P[loc_size] = in_P[i];
+            loc_size++;
+        }
+    }
+    size = loc_size;
+    delete in_P;
+    return out_P;
+}

@@ -84,5 +84,6 @@ int main(int argc, char* argv[])
     {
         cout << vertex + 1 << " ";
     }
+    system("PAUSE");
     return 0;
 }

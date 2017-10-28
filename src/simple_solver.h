@@ -8,10 +8,12 @@ public:
     size_t solve(const Graph graph, Graph& out_solution);
 private:
     void RunGreedyHeuristic();
-    void findClique(Vertices& clique, const std::vector<Vertex>& P) noexcept;
     std::vector<Vertex> IntersectWithNeighbors(Vertex v, std::vector<Vertex>::const_iterator begin, std::vector<Vertex>::const_iterator end) noexcept;
-    std::vector<Vertex> Lemma1(std::vector<Vertex>::const_iterator begin, std::vector<Vertex>::const_iterator end, size_t) noexcept;
-    std::vector<Vertex> Lemma2(std::vector<Vertex>::const_iterator begin, std::vector<Vertex>::const_iterator end, Vertices&) noexcept;
+
+    void findClique(Vertex* const clique, size_t clique_size, Vertex* P, size_t size) noexcept;
+    Vertex* IntersectWithNeighbors(Vertex v, Vertex* in_P, size_t& size) noexcept;
+    Vertex* Lemma1(Vertex v, Vertex* in_P, size_t& size, size_t clique_size) noexcept;
+    Vertex* Lemma2(Vertex v, Vertex* in_P, size_t& size, Vertex* const clique, size_t& clique_size) noexcept;
 protected:
     Vertices m_curr_clique;
    // Vertices m_p;
