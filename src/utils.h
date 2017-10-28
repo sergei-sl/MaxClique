@@ -5,32 +5,33 @@
 #include <cassert>
 #include <map>
 #include "graph.h"
+#include "windows.h"
 using namespace std;
-
 
 Graph readDimacs(const char* filename)
 {
     Graph result;
-    std::ifstream ifs(filename);
+
+    ifstream ifs(filename);
     if (!ifs.is_open()) {
         cout << "0" << endl;
         cout<< "WARNING: Could not open the file"<<endl;
         exit(1);
     }
-    std::string line;
+    string line;
     size_t line_number = 0;
     size_t edgeLineCount = 0;
     size_t edgeLineNum = 0;
     size_t vertexCount = 0;
-    while (std::getline(ifs, line)) {
+    while (getline(ifs, line)) {
         ++line_number;
         switch (line[0]) {
         case 'p':
         {
-            std::stringstream liness(line);
+            stringstream liness(line);
             // ignore 'p'
             liness.ignore(1, ' ');
-            std::string format;
+            string format;
             liness >> format >> vertexCount >> edgeLineCount;
             if (format != "edge") {
 #ifdef DEBUG

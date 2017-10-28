@@ -4,7 +4,7 @@
 #include <map>
 #include <thread>
 #include <chrono>
-
+#include <algorithm>
 #include "graph.h"
 #include "simple_solver.h"
 #include "cliquer_wrapper.h"
@@ -13,16 +13,27 @@
 
 void StartCheckThread(Graph graph)
 {
-    std::thread([=]() {
+ 
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+
         auto result = CliquerWrapper::unweightedFindMax(graph);
+
+        auto t2 = std::chrono::high_resolution_clock::now();
+
+        // integral duration: requires duration_cast
+        auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+        
+
+        // fractional duration: no duration_cast needed
+
+        std::cout << "Cliquer took " << int_ms.count() << " whole milliseconds\n";
         cout << "\nRight Answer:" << endl;
         cout << "Max Clique Size:"<< result.size()<<endl;
         cout << "Max Clique:";
         for (auto vertex : result)
-            cout << vertex+1 << "\t";
-
-    }).detach();
-
+            cout << vertex << "\t";
+        cout << "\n";
 }
 
 void StartTimeoutWatchdog(uint32_t timeout_secs)
@@ -39,29 +50,39 @@ void StartTimeoutWatchdog(uint32_t timeout_secs)
 int main(int argc, char* argv[])
 {
     uint32_t timeout = 0;
-    try {
+    try
+    {
         timeout = std::stoul(argv[2]);
     }
     catch (std::invalid_argument e) {
         cout << "WARNING: Could not get timeout limit!" << endl;
         return 1;
     }
-    StartTimeoutWatchdog(timeout);
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-	Graph in_graph = readDimacs(argv[1]);
+    StartTimeoutWatchdog(timeout);;
+    Graph in_graph = readDimacs(argv[1]);
     Graph out_graph(in_graph.GetVertexCount());
-#ifdef DEBUG
-	//StartCheckThread(in_graph);
-#endif
+    // only use this for debug
+    //StartCheckThread(in_graph);
+    
     SimpleSolver solver;
 
+    auto t1 = std::chrono::high_resolution_clock::now();
     solver.solve(in_graph, out_graph);
     Vertices clique = out_graph.GetVertexSet();
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    // integral duration: requires duration_cast
+    auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+    // fractional duration: no duration_cast needed
+
+    //std::cout << "Guano took " << int_ms.count() << " whole milliseconds\n";
     cout << clique.size() << endl;
+    std::sort(clique.begin(), clique.end());
     for (auto vertex : clique)
     {
         cout << vertex + 1 << " ";
     }
-
-	return 0;
+    return 0;
 }
