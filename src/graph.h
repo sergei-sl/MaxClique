@@ -27,7 +27,7 @@ public:
 
 	size_t GetVertexCount() const;
     Vertices GetVertexSet() { return m_vertices; }
-    void SetVertexSet(Vertices arr);
+    void SetVertexSet(Vertices arr) { m_vertices = arr; }
 	const Vertices& GetVerticesOrderedByDegree() const;
 
 	void AddEdge(Vertex v1, Vertex v2);

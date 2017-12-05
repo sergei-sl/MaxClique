@@ -54,7 +54,7 @@ Graph readDimacs(const char* filename)
             size_t v1;
             size_t v2;
             liness >> v1 >> v2;
-            // Vertex labels start at 1, but we need them to start from 0
+            // Vertex labels start at 1 
             --v1;
             --v2;
             if (v1 >= vertexCount || v2 >= vertexCount) {

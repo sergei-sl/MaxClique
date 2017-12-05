@@ -11,8 +11,10 @@
 #include "utils.h"
 
 
-void StartCheck(Graph graph)
+void StartCheckThread(Graph graph)
 {
+ 
+
         auto t1 = std::chrono::high_resolution_clock::now();
 
         auto result = CliquerWrapper::unweightedFindMax(graph);
@@ -60,7 +62,7 @@ int main(int argc, char* argv[])
     Graph in_graph = readDimacs(argv[1]);
     Graph out_graph(in_graph.GetVertexCount());
     // only use this for debug
-    //StartCheck(in_graph);
+    //StartCheckThread(in_graph);
     
     SimpleSolver solver;
 

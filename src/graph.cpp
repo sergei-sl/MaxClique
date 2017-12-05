@@ -8,11 +8,6 @@ size_t Graph::GetVertexCount() const
     return m_adjacency_matrix.size();
 }
 
-void Graph::SetVertexSet(Vertices arr)
-{
-    m_vertices = arr;
-}
-
 const Vertices& Graph::GetVerticesOrderedByDegree() const
 {
     if (m_vertices_by_degree.empty()) {
