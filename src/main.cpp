@@ -72,10 +72,8 @@ int main(int argc, char* argv[])
 
     // integral duration: requires duration_cast
     auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-
-    // fractional duration: no duration_cast needed
-
-    //std::cout << "Guano took " << int_ms.count() << " whole milliseconds\n";
+    
+   // std::cout << "Program took " << int_ms.count() << " whole milliseconds\n";
     cout << clique.size() << endl;
     std::sort(clique.begin(), clique.end());
     for (auto vertex : clique)

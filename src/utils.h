@@ -33,9 +33,9 @@ Graph readDimacs(const char* filename)
             liness.ignore(1, ' ');
             string format;
             liness >> format >> vertexCount >> edgeLineCount;
-            if (format != "edge") {
+            if (format != "edge" && format != "col") {
 #ifdef DEBUG
-                cout << "Header on line " << line_number << " uses \"" << format << "\" format, but this solution supports only \"edge\" format is supported";
+                cout << "Header on line " << line_number << " uses \"" << format << "\" format, but this solution supports only \"edge\" or \"col\" format is supported";
 #endif
                 return result;
             }
