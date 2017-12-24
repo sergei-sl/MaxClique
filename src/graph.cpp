@@ -62,6 +62,11 @@ const Graph::AdjacencyMatrixRow& Graph::GetAdjacencyMatrixRow(Vertex v) const
     return m_adjacency_matrix[v];
 }
 
+const std::set<Vertex>& Graph::GetNotNeighbours(Vertex v) const
+{
+    return not_neighbours[v];
+}
+
 void Graph::SetAdjacencyMatrixRow(Vertex v, const AdjacencyMatrixRow& row)
 {
     m_adjacency_matrix[v] = row;
@@ -92,6 +97,24 @@ void Graph::EraseVertex(Vertex v)
         row.erase(row.begin() + v);
     }
     m_adjacency_matrix.erase(m_adjacency_matrix.begin() + v);
+}
+
+void Graph::GenerateNotNeighbours()
+{
+    not_neighbours.clear();
+    not_neighbours.resize(m_vertices.size());
+    for (size_t i = 0; i < m_vertices.size(); ++i)
+    {
+        std::set<Vertex>& not_neighnours_set = not_neighbours[i];
+        for (size_t j = 0; j < m_vertices.size(); ++j)
+        {
+            if (i == j)
+                continue;
+            if (!HasEdge(i, j))
+                not_neighnours_set.insert(j);
+        }
+    }
+    
 }
 
 const std::string Graph::ToString()

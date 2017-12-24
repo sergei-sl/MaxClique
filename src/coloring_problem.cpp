@@ -28,7 +28,7 @@ Color GraphColoring::getVertexColor(Vertex v) const
     return mVertexToColor[v];
 }
 
-const Vertices& GraphColoring::getVerticesByColor(Color c) const
+Vertices& GraphColoring::getVerticesByColor(Color c)
 {
     return mColorToVertices[c];
 }
@@ -47,13 +47,13 @@ void GraphColoring::clear()
     mColorCount = 0;
 }
 
-const size_t iterationsNeeded = 500;
-const size_t numSoultionsNeeded = 40;
+const size_t iterationsNeeded = 300;
+const size_t numSoultionsNeeded = 35;
 
 size_t ColoringSolver::solve(const Graph& graph, std::vector<GraphColoring>& out_solutions)
 {
     out_solutions.clear();
-    out_solutions.reserve(numSoultionsNeeded);
+    out_solutions.reserve(numSoultionsNeeded+1);
 
     GraphColoring rlfSolution(graph.GetVertexCount());
     size_t rlfColorsNum = solveRlf(graph, rlfSolution);
@@ -96,6 +96,7 @@ size_t ColoringSolver::solve(const Graph& graph, std::vector<GraphColoring>& out
         }
     }
 
+    out_solutions.push_back(rlfSolution);
     return colorCountToSolutionIdx.begin()->first;
 }
 

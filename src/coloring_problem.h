@@ -13,7 +13,7 @@ public:
 
     void colorVertex(Vertex v, Color c);
     Color getVertexColor(Vertex v) const;
-    const Vertices& getVerticesByColor(Color c) const;
+    Vertices& getVerticesByColor(Color c);
     size_t getColorCount() const;
     void clear();
 

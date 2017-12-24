@@ -3,6 +3,7 @@
 #include "graph.h"
 #include "coloring_problem.h"
 #include <vector>
+#include <set>
 #include <ilcplex/cplex.h>
 class SimpleSolver
 {
@@ -21,6 +22,7 @@ private:
     void solveLP() noexcept;
     void generateConstraints() noexcept;
     void generateEdgeConstraints() noexcept;
+    void expandIndependentSet(Vertices & vert);
     void generateColoringConstraints() noexcept;
     void generateIndependentSetsConstraints() noexcept;
     bool getBranchVariable(const std::vector<double>&, Vertex&) noexcept;
@@ -54,4 +56,5 @@ protected:
 
     //array of ones
     std::vector<double> m_main_c;
+    std::set<std::pair<Vertex, Vertex> >already_added;
 };

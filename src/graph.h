@@ -35,15 +35,17 @@ public:
 	bool HasEdge(size_t v1, size_t v2) const;
 
 	const AdjacencyMatrixRow& GetAdjacencyMatrixRow(Vertex v) const;
+    const std::set<Vertex>& GetNotNeighbours(Vertex v) const;
 	void SetAdjacencyMatrixRow(Vertex v, const AdjacencyMatrixRow& row);
 	
 	void InsertVertex(Vertex v, AdjacencyMatrixRow& adjacency);
 	void EraseVertex(Vertex v);
-
+    void GenerateNotNeighbours();
 	// Outputs graph in DIMACS format
 	const std::string ToString();
 private:
 	std::vector<AdjacencyMatrixRow> m_adjacency_matrix;
 	mutable Vertices m_vertices_by_degree;
     Vertices m_vertices;
+    std::vector<std::set<Vertex> > not_neighbours;
 };

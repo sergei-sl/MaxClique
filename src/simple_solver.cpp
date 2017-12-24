@@ -1,8 +1,32 @@
 #include "simple_solver.h"
 #include <algorithm>
+#include <iterator>
+#include <set>
 #include <cassert>
 
-bool validateColoring(const Graph& graph, const GraphColoring& coloring)
+// Overloading operators for set intersections and unions
+template <class T, class CMP = std::less<T>, class ALLOC = std::allocator<T> >
+std::set<T, CMP, ALLOC> operator * (
+    const std::set<T, CMP, ALLOC> &s1, const std::set<T, CMP, ALLOC> &s2)
+{
+    std::set<T, CMP, ALLOC> s;
+    std::set_intersection(s1.begin(), s1.end(), s2.begin(), s2.end(),
+        std::inserter(s, s.begin()));
+    return s;
+}
+
+template <class T, class CMP = std::less<T>, class ALLOC = std::allocator<T> >
+std::set<T, CMP, ALLOC> operator + (
+    const std::set<T, CMP, ALLOC> &s1, const std::set<T, CMP, ALLOC> &s2)
+{
+    std::set<T, CMP, ALLOC> s;
+    std::set_union(s1.begin(), s1.end(), s2.begin(), s2.end(),
+        std::inserter(s, s.begin()));
+    return s;
+}
+
+
+bool validateColoring(const Graph& graph, GraphColoring& coloring)
 {
     for (Color c = 0; c < coloring.getColorCount(); ++c) {
         for (Vertex v1 : coloring.getVerticesByColor(c)) {
@@ -61,6 +85,7 @@ size_t SimpleSolver::solve(const Graph in_graph, Graph& out_solutions)
     min_color_num = m_p.size();
     SIZE = m_p.size();
     m_current_graph = in_graph;
+    m_current_graph.GenerateNotNeighbours();
     RunGreedyHeuristic();
     std::vector<Vertex> init;
     init.clear();
@@ -171,8 +196,8 @@ void SimpleSolver::generateConstraints() noexcept
 {
     m_lower_bounds.resize(m_p.size(), 0.);
     m_upper_bounds.resize(m_p.size(), 1.);
-    generateEdgeConstraints();
     generateColoringConstraints();
+    generateEdgeConstraints();
     generateIndependentSetsConstraints();
 
     for each (auto& var in m_main_constraints)
@@ -193,6 +218,8 @@ void SimpleSolver::generateEdgeConstraints() noexcept
         {
             if (!adjacent[j])
             {
+                if (already_added.find(std::make_pair(i, j)) != already_added.end() || already_added.find(std::make_pair(j, i)) != already_added.end())
+                    continue;
                 std::vector<double> constr_coef;
                 constr_coef.resize(m_p.size(), 0.);
                 constr_coef[i] = 1;
@@ -203,6 +230,31 @@ void SimpleSolver::generateEdgeConstraints() noexcept
     }
 }
 
+void SimpleSolver::expandIndependentSet(Vertices& vert)
+{
+    std::set<Vertex> expand = m_current_graph.GetNotNeighbours(*(vert.begin()));
+    for (Vertex v : vert)
+    {
+        expand = expand*m_current_graph.GetNotNeighbours(v);
+    }
+    while(!expand.empty())
+    {
+        Vertex v_max = *(expand.begin());
+        size_t max_size = 0;
+        for (const Vertex& v : expand)
+        {
+            const std::set<Vertex> & candidate = expand*m_current_graph.GetNotNeighbours(v);
+            if (candidate.size() > max_size)
+            {
+                max_size = candidate.size();
+                v_max = v;
+            }
+        }
+        expand = expand*m_current_graph.GetNotNeighbours(v_max);
+        vert.push_back(v_max);
+    }    
+}
+
 void SimpleSolver::generateColoringConstraints() noexcept
 {
     ColoringSolver solver;
@@ -210,18 +262,31 @@ void SimpleSolver::generateColoringConstraints() noexcept
     solver.solve(m_current_graph, colorings);
     for (auto& col : colorings)
     {
-        validateColoring(m_current_graph, col);
+        //validateColoring(m_current_graph, col);
         size_t col_num = col.getColorCount();
         if (col_num < min_color_num)
             min_color_num = col_num;
         for (size_t color = 0; color < col_num; ++color)
         {
-            const auto & vert_by_col = col.getVerticesByColor(color);
+            auto & vert_by_col = col.getVerticesByColor(color);
+            expandIndependentSet(vert_by_col);
+            if (vert_by_col.size() <= 2)
+                continue;
             std::vector<double> constr_coef;
             constr_coef.resize(m_p.size(), 0.);
-            for (auto& vert : vert_by_col)
+            for (auto vert : vert_by_col)
             {
                 constr_coef[vert] = 1;
+                for (auto vert2 : vert_by_col)
+                {
+                    if (vert2 == vert)
+                        continue;
+                    if (already_added.find(std::make_pair(vert, vert2)) == already_added.end() && already_added.find(std::make_pair(vert2, vert)) == already_added.end())
+                        already_added.insert(std::make_pair(vert, vert2));
+                    //!!!!!!!!!!!!!
+                    if (already_added.find(std::make_pair(vert, vert2)) == already_added.end() && already_added.find(std::make_pair(vert2, vert)) == already_added.end())
+                        already_added.insert(std::make_pair(vert, vert2));
+                }
             }
             m_main_constraints.push_back(std::move(constr_coef));
         }
